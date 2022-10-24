@@ -9,59 +9,102 @@
 # 4- Quais recursos - Livros
 
 from flask import Flask, jsonify, request
+import psycopg2, string, json
 
 app = Flask(__name__)
 
-livros = [
-    {
-        'id': 1,
-        'titulo': 'Otelo',
-        'autor': 'William Shakespeare',
-    },
-    {
-        'id': 2,
-        'titulo': 'Memorias de uma infância química',
-        'autor': 'Oliver Sacks',
-    },
-    {
-        'id': 3,
-        'titulo': 'Mitologia nórdica',
-        'autor': 'Neil Gaiman',
-    }
-]
+def conectarDB():
+    
+    try:
+        with open("./databaseConnect/bancoLivros.json", 'r') as meu_json:
+            dados = json.load(meu_json)
+            return (psycopg2.connect(host= dados[0]["host"], database=dados[0]["database"],user=dados[0]["user"], password=dados[0]["password"], port=dados[0]["port"]))
+    except psycopg2.OperationalError as e:
+        print('Unable to connect!\n{0}').format(e)      
 
-# Com os livros criados e armazenados, devemos criar uma API com as seguintes funcionalidades:
-# 1. Consultar todos;
+#con = conectarDB()
+#cur = con.cursor()
+
+# 1. Consultar todos os livros cadastrados;
 @app.route('/livros', methods=['GET'])
 def obterLivros():
+    con = conectarDB()
+    cur = con.cursor()
+    sql = 'select * from \"Livros\"'
+    cur.execute(sql)
+    livros = cur.fetchall()
     return jsonify(livros)
-# 2. Incluir novo livro;
+    cur.close()
+    con.close()
+
+# 2. Cadastrar novo livro;
 @app.route('/livros', methods=['POST'])
 def incluirNovoLivro():
+    con = conectarDB()
+    cur = con.cursor()
     novoLivro = request.get_json()
-    livros.append(novoLivro)
-
+    sql = 'insert into "Livros" (id, titulo, autor) values ({}, {}, {})'.format((novoLivro["id"]), (novoLivro["titulo"]), (novoLivro["autor"]))
+    cur.execute(sql)
+    con.commit()
+    sql = 'select * from \"Livros\"'
+    cur.execute(sql)
+    livros = cur.fetchall()
     return jsonify(livros)
+    cur.close()
+    con.close()
+
 # 3. Consultar por id;
 @app.route('/livros/<int:id>', methods=['GET'])
 def obterLivroPorID(id):
+    con = conectarDB()
+    cur = con.cursor()
+    sql = 'select * from \"Livros\"'
+    cur.execute(sql)
+    livros = cur.fetchall()
     for livro in livros:
-        if livro.get('id') == id:
+        if livro[0] == id:
             return jsonify(livro)
-# 4. Editar por id;
+    cur.close()
+    con.close()
+
+# 4. Editar registro por id;
 @app.route('/livros/<int:id>', methods=['PUT'])
 def editarLivroPorId(id):
+    con = conectarDB()
+    cur = con.cursor()
     livroAlterado = request.get_json()
-    for indice,livro in enumerate(livros):
-        if livro.get('id') == id:
-            livros[indice].update(livroAlterado)
-            return jsonify(livros[indice])
-# 5. Excluir por id.
-@app.route('/livros/<int:id>', methods=['DELETE'])
-def excluirLivroPorId(id):
-    for indice,livro in enumerate(livros):
-        if livro.get('id') == id:
-            del livros[indice]
-
+    sql = 'update "Livros" set titulo = {}, autor = {} where id = {}'.format((livroAlterado["titulo"]), (livroAlterado["autor"]),(id))
+    cur.execute(sql)
+    con.commit()
+    sql = 'select * from \"Livros\"'
+    cur.execute(sql)
+    livros = cur.fetchall()          
     return jsonify(livros)
+    cur.close()
+    con.close()
+
+
+# 5. Excluir por id.
+@app.route('/livros/<int:id>', methods=['DELETE', 'GET'])
+def excluirLivroPorId(id):
+    try:
+        con = conectarDB()
+        cur = con.cursor()
+        sql = 'delete from "Livros" where id = {}'.format(id)
+        cur.execute(sql)
+        rows_deleted = cur.rowcount
+        con.commit()
+
+        cur.close()
+    except(Exception, psycopg2.DatabaseError) as e:
+        print(e)
+    finally:
+        if con is not None:
+            con.close()
+    return str(rows_deleted)
+    
+
+
+
 app.run(port=5000,host='localhost',debug=True)
+#con.close()
