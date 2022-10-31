@@ -1,0 +1,53 @@
+.btnExcluir {
+  height: "10px";
+  width: "10px";
+  background-color: red;
+  color:white;
+  font-style: bold;
+  border-radius: 7px;
+  border-color: transparent;
+}
+
+.btnEditar {
+    height: "10px";
+    width: "10px";
+    background-color: yellow;
+    color:black;
+    font-style: bold;
+    border-radius: 7px;
+    border-color: transparent;
+}
+
+.btnEditar:hover {
+    background: rgb(179, 179, 0);
+}
+
+.btnExcluir:hover {
+    background: rgb(194, 2, 2);
+}
+
+.btnLivros:hover{
+    cursor:pointer;
+}
+
+#tabelaLivros{
+    font-style: bold;
+    border: 1px groove black;
+}
+
+.dadosLivros{
+    text-align: left;
+    padding-right: 100px;
+    border: 0.5px ridge black;
+}
+
+.linhaDadosLivros{
+    display: flexbox;
+    border: 1px solid black;
+
+}
+
+.titulo {
+    margin-left: auto;
+    margin-right: auto;
+}

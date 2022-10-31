@@ -8,7 +8,8 @@
 #       - localhost/livros/id (DELETE)
 # 4- Quais recursos - Livros
 
-from flask import Flask, jsonify, request
+#from crypt import methods
+from flask import Flask, jsonify, request, render_template
 import psycopg2, string, json
 
 app = Flask(__name__)
@@ -25,6 +26,12 @@ def conectarDB():
 #con = conectarDB()
 #cur = con.cursor()
 
+
+@app.route('/', methods=["GET", "POST"])
+def index():
+    return obterLivros()
+
+
 # 1. Consultar todos os livros cadastrados;
 @app.route('/livros', methods=['GET'])
 def obterLivros():
@@ -33,37 +40,42 @@ def obterLivros():
     sql = 'select * from \"Livros\"'
     cur.execute(sql)
     livros = cur.fetchall()
-    return jsonify(livros)
+    return render_template('index.html', livros=livros)
     cur.close()
     con.close()
 
 # 2. Cadastrar novo livro;
-@app.route('/livros', methods=['POST'])
+@app.route('/cadastrarLivro')
+def cadastrarLivro():
+    return render_template('cadastrarLivro.html')
+
+@app.route('/incluirNovoLivro', methods=['POST','GET'])
 def incluirNovoLivro():
     con = conectarDB()
     cur = con.cursor()
-    novoLivro = request.get_json()
-    sql = 'insert into "Livros" (id, titulo, autor) values ({}, {}, {})'.format((novoLivro["id"]), (novoLivro["titulo"]), (novoLivro["autor"]))
+    idLivro = request.args.get("idLivro")
+    nomeLivro = request.args.get("tituloLivro")
+    autorLivro = request.args.get("autorLivro")
+    sql = 'insert into "Livros" (id, titulo, autor) values ({}, {}, {})'.format(("'"+(idLivro)+"'"), ("'"+(nomeLivro)+"'"), ("'"+(autorLivro)+"'"))
     cur.execute(sql)
     con.commit()
-    sql = 'select * from \"Livros\"'
-    cur.execute(sql)
-    livros = cur.fetchall()
-    return jsonify(livros)
+    return index()
     cur.close()
     con.close()
 
 # 3. Consultar por id;
-@app.route('/livros/<int:id>', methods=['GET'])
-def obterLivroPorID(id):
+@app.route('/buscarLivro/', methods=['GET', 'POST'])
+def buscarLivro():
+    #id = int(request.form.get("id"))
+    name = request.args.get("livro")
+    print(name)
     con = conectarDB()
     cur = con.cursor()
-    sql = 'select * from \"Livros\"'
+    sql = "select * from \"Livros\" where titulo like '%{}%'".format(name)
     cur.execute(sql)
     livros = cur.fetchall()
-    for livro in livros:
-        if livro[0] == id:
-            return jsonify(livro)
+    print(livros)
+    return render_template('index.html', livros=livros)
     cur.close()
     con.close()
 
